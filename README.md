@@ -142,8 +142,7 @@ docker exec -it fastapi_test_container pytest tests/
 
 ## 📌 Guide on how to create Model, Schema, Service, Manager and Endpoints
 
-This project uses a modular architecture based on reusable **base classes**  
-(`BaseService`, `BaseManager`, `BaseSchema`, `Base`) designed to avoid repeating the same logic in every new module.
+This project uses a modular architecture based on reusable **base classes** (`BaseService`, `BaseManager`, `BaseSchema`, `Base`) designed to avoid repeating the same logic in every new module.
 
 Thanks to these base classes, adding a new entity (e.g., `Product`, `Article`, `Category`, etc.) becomes fast and consistent.
 
